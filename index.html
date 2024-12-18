@@ -377,6 +377,11 @@ function generateRandomRegions(width, height, numberOfRegions) {
     const totalCells = width * height;
     if (totalCells % numberOfRegions !== 0) {
       showBothModal("errorModal");
+      
+      const loadingOverlay = document.getElementById('loadingOverlay');
+
+      loadingOverlay.style.display = 'none';
+
       throw new Error("Total number of cells is not divisible by the number of regions.");
     }
 
@@ -587,9 +592,6 @@ function generateGrid() {
     width = parseInt(document.getElementById('width').value);
     height = parseInt(document.getElementById('height').value);
     numRegions = parseInt(document.getElementById('regions').value);
-
-    document.getElementById("clear-button").style.visibility = "visible";
-    document.getElementById("clear-all-button").style.visibility = "visible";
     
     gridArray = initializeArray(width, height, numRegions);
     regionAssignments = Array.from({ length: height }, () => Array(width).fill(null));
@@ -620,9 +622,13 @@ function generateGrid() {
     selectRegion(0);
     document.addEventListener('mouseup', handleBoxEnd);
     document.addEventListener('touchend', handleBoxEnd);
+
+    document.getElementById("clear-button").style.visibility = "visible";
+    document.getElementById("clear-all-button").style.visibility = "visible";
+
     const loadingOverlay = document.getElementById('loadingOverlay');
 
-loadingOverlay.style.display = 'none';
+    loadingOverlay.style.display = 'none';
 }
 
 function createRegionButtons() {
