@@ -14,6 +14,7 @@
 body {
   margin:0;
   background:#202429;
+  touch-action: none;
 }
 * {
   font-family: 'Poppins', Arial, sans-serif;
@@ -157,7 +158,7 @@ input:hover {
 
 #grid-container {
     display: grid;
-    gap: 10px;
+    /* gap: 8px; */
     justify-content: center;
     user-select: none;
     margin:0;
@@ -173,7 +174,8 @@ input:hover {
     width: 30px;
     height: 30px;
     box-sizing: border-box;
-    outline-offset:2px;
+    outline-offset:-3px;
+    border: solid 5px #202429;
 }
 .red {
     background-color: #a00;
@@ -185,6 +187,9 @@ input:hover {
     background-color: #a0a;
 }
 #clear-button {
+    visibility:hidden;
+}
+#clear-all-button {
     visibility:hidden;
 }
 /* Modal Styles */
@@ -218,7 +223,21 @@ input:hover {
 #modal button:hover {
     background-color: #555;
 }
+.washed-out {
+    animation: brightnessPulse 1s ease-out forwards;
+}
 
+@keyframes brightnessPulse {
+    0% {
+        filter: brightness(1); /* Normal brightness */
+    }
+    50% {
+        filter: brightness(2); /* Brightness increased */
+    }
+    100% {
+        filter: brightness(1); /* Back to normal */
+    }
+}
 /* Region outline will be applied inline via JS */
 </style>
 </head>
@@ -246,8 +265,10 @@ input:hover {
   <div class="grid-scrollbox hstack center alt-center">
     <div id="grid-container" class=""></div>
   </div>
-  
-  <button id="clear-button" style="margin:10px; height:35px;" onclick="clearSelectedRegion()">Clear Selected Region</button>
+  <div class="hstack center gap " style="padding:0 10px; height:100px;">
+    <button id="clear-button" class="hstack flex center" style="height:35px;" onclick="clearSelectedRegion()">Clear Region</button>
+    <button id="clear-all-button" class="hstack flex center" style="height:35px;" onclick="clearAllRegions()">Clear All</button>  
+  </div>  
 </div>
 
 <div id="modal">
@@ -459,38 +480,23 @@ function generateRegionHues(numRegions) {
     }
     return hues;
 }
-
+// Modify `generateGrid` to use the new event listener function
 function generateGrid() {
     width = parseInt(document.getElementById('width').value);
     height = parseInt(document.getElementById('height').value);
     numRegions = parseInt(document.getElementById('regions').value);
 
     document.getElementById("clear-button").style.visibility = "visible";
-
-    // Initialize grid array
+    document.getElementById("clear-all-button").style.visibility = "visible";
+    
     gridArray = initializeArray(width, height, numRegions);
+    regionAssignments = Array.from({ length: height }, () => Array(width).fill(null));
 
-    // Initialize region assignments
-    regionAssignments = [];
-    for (let i = 0; i < height; i++) {
-        const row = [];
-        for (let j = 0; j < width; j++) {
-            row.push(null);
-        }
-        regionAssignments.push(row);
-    }
-
-    // Calculate max tiles per region
-    const totalTiles = width * height;
-    maxTilesPerRegion = Math.floor(totalTiles / numRegions);
-
-    // Generate region hues
+    maxTilesPerRegion = Math.floor((width * height) / numRegions);
     regionHues = generateRegionHues(numRegions);
 
-    // Create region buttons
     createRegionButtons();
 
-    // Setup grid container
     const gridContainer = document.getElementById('grid-container');
     gridContainer.innerHTML = '';
     gridContainer.style.gridTemplateColumns = `repeat(${width}, 30px)`;
@@ -498,25 +504,20 @@ function generateGrid() {
     for (let i = 0; i < height; i++) {
         for (let j = 0; j < width; j++) {
             const box = document.createElement('div');
-            box.classList.add('grid-box');
-            box.classList.add(
-                gridArray[i][j] === 0 ? 'red' :
-                gridArray[i][j] === 1 ? 'blue' :
-                'purple'
-              );
+            box.classList.add('grid-box', gridArray[i][j] === 0 ? 'red' : gridArray[i][j] === 1 ? 'blue' : 'purple');
             box.dataset.row = i;
             box.dataset.col = j;
-            box.addEventListener('mousedown', handleBoxMouseDown);
-            box.addEventListener('mouseover', handleBoxMouseOver);
+
+            // Attach event listeners
+            attachEventListenersToBox(box);
+
             gridContainer.appendChild(box);
         }
     }
 
-    // Select the first region by default
     selectRegion(0);
-
-    // Set up global mouseup to end dragging
-    document.addEventListener('mouseup', () => { isMouseDown = false; });
+    document.addEventListener('mouseup', handleBoxEnd);
+    document.addEventListener('touchend', handleBoxEnd);
 }
 
 function createRegionButtons() {
@@ -534,6 +535,7 @@ function createRegionButtons() {
 }
 
 // Select the active region for editing
+// Select the active region for editing
 function selectRegion(r) {
     currentRegion = r;
     const regionButtons = document.querySelectorAll('.region-button');
@@ -541,6 +543,22 @@ function selectRegion(r) {
         btn.classList.remove('selected');
     });
     regionButtons[r].classList.add('selected');
+
+    // Clear "washed-out" class from all tiles
+    document.querySelectorAll('.grid-box').forEach(tile => {
+        tile.classList.remove('washed-out');
+    });
+
+    for (let i = 0; i < height; i++) {
+        for (let j = 0; j < width; j++) {
+            if (regionAssignments[i][j] == currentRegion) {
+                const tile = getTileElement(i, j);
+                tile.classList.remove('washed-out');
+                void tile.offsetWidth; // Trigger reflow
+                tile.classList.add('washed-out');
+            }
+        }
+    }
 }
 
 // Clear the currently selected region
@@ -559,18 +577,62 @@ function clearSelectedRegion() {
     regionButton.style.backgroundColor = '';
 }
 
-// Handle mousedown event on a tile
-function handleBoxMouseDown(e) {
-    isMouseDown = true;
-    addTileToRegion(e.target);
+function clearAllRegions() {
+    for (let i = 0; i < height; i++) {
+        for (let j = 0; j < width; j++) {
+          regionAssignments[i][j] = null;
+          const tile = getTileElement(i, j);
+          tile.style.outline = 'none';
+        }
+    }
+    const regionButtons = document.querySelectorAll('.region-button');
+    regionButtons.forEach(button => {
+        button.style.backgroundColor = '';
+    });
 }
 
-// Handle mouseover (dragging) event on a tile
-function handleBoxMouseOver(e) {
-    if (isMouseDown) {
-        addTileToRegion(e.target);
+let isTouchDragging = false; // Track touch dragging
+
+// Handle mousedown and touchstart
+function handleBoxStart(e) {
+    e.preventDefault(); // Prevent scrolling on touch devices
+    const target = e.targetTouches ? document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY) : e.target;
+    clearSelectedRegion();
+    if (target && target.classList.contains('grid-box')) {
+        isMouseDown = true;
+        isTouchDragging = true;
+        addTileToRegion(target);
     }
 }
+
+// Handle mouseover and touchmove
+function handleBoxMove(e) {
+    e.preventDefault(); // Prevent scrolling
+    if (isMouseDown || isTouchDragging) {
+        const touch = e.touches ? e.touches[0] : null;
+        const target = touch ? document.elementFromPoint(touch.clientX, touch.clientY) : e.target;
+        if (target && target.classList.contains('grid-box')) {
+            addTileToRegion(target);
+        }
+    }
+}
+
+// Handle mouseup and touchend
+function handleBoxEnd() {
+    isMouseDown = false;
+    isTouchDragging = false;
+}
+
+// Add event listeners for both mouse and touch events
+function attachEventListenersToBox(box) {
+    box.addEventListener('mousedown', handleBoxStart);
+    box.addEventListener('mouseover', handleBoxMove);
+
+    // Touch event listeners
+    box.addEventListener('touchstart', handleBoxStart, { passive: false });
+    box.addEventListener('touchmove', handleBoxMove, { passive: false });
+}
+
 
 // Attempt to add the tile to the current region
 function addTileToRegion(tile) {
@@ -604,6 +666,7 @@ function addTileToRegion(tile) {
     // If region is now full, determine the majority color and set button background
     if (countTilesInRegion(currentRegion) === maxTilesPerRegion) {
         setRegionButtonBackgroundColor(currentRegion);
+        selectRegion(currentRegion);
     }
 }
 
