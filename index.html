@@ -70,6 +70,9 @@ body {
   height:100vh;
   width:100vw;
 }
+#screen {
+  transition: .1s;
+}
 
 @supports (height: 100svh) {
   .screen {
@@ -193,20 +196,7 @@ input:hover {
     visibility:hidden;
 }
 /* Modal Styles */
-#modal {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 300px;
-    background-color: #333;
-    border-radius: 10px;
-    text-align: center;
-    padding: 20px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-}
+
 #modal h2 {
     margin: 0 0 10px 0;
     color: #fff;
@@ -223,6 +213,69 @@ input:hover {
 #modal button:hover {
     background-color: #555;
 }
+
+#modal, #sureModal, #errorModal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95); /* Slightly shrink */
+    width: 300px;
+    background-color: #333;
+    border-radius: 10px;
+    text-align: center;
+    padding: 20px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+
+    opacity: 0; /* Initially invisible */
+    visibility: hidden; /* Hide element from screen readers and interaction */
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+#modal.show, #sureModal.show, #errorModal.show {
+    opacity: 1; /* Fully visible */
+    visibility: visible; /* Element is interactable */
+    transform: translate(-50%, -50%) scale(1); /* Normal scale */
+}
+
+#modal.hide, #sureModal.hide, #errorModal.hide {
+    opacity: 0; /* Fade out */
+    /* visibility: hidden;  */
+    transform: translate(-50%, -50%) scale(0.95); /* Slightly shrink */
+}
+#sureModal h2 {
+    margin: 0 0 10px 0;
+    color: #fff;
+}
+#sureModal button {
+    margin-top: 10px;
+    background-color: #444;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+#errorModal button:hover {
+    background-color: #555;
+}
+#errorModal h2 {
+    margin: 0 0 10px 0;
+    color: #fff;
+}
+#errorModal button {
+    margin-top: 10px;
+    background-color: #444;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+#errorModal button:hover {
+    background-color: #555;
+}
+
 .washed-out {
     animation: brightnessPulse 1s ease-out forwards;
 }
@@ -238,11 +291,28 @@ input:hover {
         filter: brightness(1); /* Back to normal */
     }
 }
+
+.overlay {
+  filter: brightness(.5);
+}
+
+.otherOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 10;
+    display: none; /* Initially hidden */
+    justify-content: center;
+    align-items: center;
+}
 /* Region outline will be applied inline via JS */
 </style>
 </head>
 <body>
-<div class="vstack screen">
+<div class="vstack screen" id="screen">
   <div class="vstack firm" style="height:320px;">
     <div class="vstack firm" style="height:130px; margin:10px;">
         <h1 style="line-height:0px;">Gerrymander</h1>
@@ -258,7 +328,7 @@ input:hover {
         <input type="number" id="regions" min="1" value="7">
         
     </div>
-    <button onclick="generateGrid()" style="margin:10px;">Generate Grid</button>
+    <button onclick="loadGenerateGrid()" style="margin:10px;">Generate Grid</button>
 
     <div id="region-buttons" class="hstack scroll firm" style="padding: 0 10px;"></div>
   </div>
@@ -267,14 +337,26 @@ input:hover {
   </div>
   <div class="hstack center gap " style="padding:0 10px; height:100px;">
     <button id="clear-button" class="hstack flex center" style="height:35px;" onclick="clearSelectedRegion()">Clear Region</button>
-    <button id="clear-all-button" class="hstack flex center" style="height:35px;" onclick="clearAllRegions()">Clear All</button>  
+    <button id="clear-all-button" class="hstack flex center" style="height:35px;" onclick="showSureModal()">Clear All</button>  
   </div>  
 </div>
 
 <div id="modal">
-  <h2>You Won!</h2>
-  <button onclick="window.location.reload()">Play Again</button>
+  <h3>You Killed Democracy!</h3>
+  <button onclick="hideModal()">Play Another</button>
 </div>
+<div id="sureModal">
+  <p>Are you sure you want to clear everything?</p>
+  <button style="width:80px" onclick="hideSureModal()">No</button>
+  <button style="width:80px" onclick="clearAllRegions()">Yes</button>
+</div>
+<div id="errorModal">
+  <h3>Change Number Of Districts</h3>
+  <p style="font-size:13px;">The number of tiles cannot be divided evenly into the number of districts</p>
+  <button style="width:80px" onclick='hideBothModal("errorModal")'>OK</button>
+</div>
+
+<div id="loadingOverlay" class="otherOverlay">refreshing...</div>
 
 <script>
   let gridArray = [];           // Stores red(0) or blue(1) for each tile
@@ -294,6 +376,7 @@ let redDistricts = 0; // To count red-majority districts
 function generateRandomRegions(width, height, numberOfRegions) {
     const totalCells = width * height;
     if (totalCells % numberOfRegions !== 0) {
+      showBothModal("errorModal");
       throw new Error("Total number of cells is not divisible by the number of regions.");
     }
 
@@ -351,6 +434,9 @@ function generateRandomRegions(width, height, numberOfRegions) {
     }
 
     function generateGrid() {
+      document.getElementById("region-buttons").scrollTop = 0;
+      document.getElementById("region-buttons").scrollLeft = 0;
+
       completedRegions = 0; // To track the number of completed regions
       redDistricts = 0; // To count red-majority districts
       const grid = createEmptyGrid();
@@ -391,6 +477,11 @@ function generateRandomRegions(width, height, numberOfRegions) {
         if (!success) return null; // Failed to place a valid region
       }
       return grid;
+
+      const loadingOverlay = document.getElementById('loadingOverlay');
+
+      loadingOverlay.style.display = 'none';
+
     }
 
     function findRandomUnassignedCell(grid) {
@@ -409,6 +500,17 @@ function generateRandomRegions(width, height, numberOfRegions) {
     }
     return grid;
   }
+
+  function loadGenerateGrid() {
+      const loadingOverlay = document.getElementById('loadingOverlay');
+
+      loadingOverlay.style.display = 'flex';
+
+      // Allow the browser to render the loading overlay before heavy computations
+      setTimeout(() => {
+        generateGrid();
+      }, 50); // Delay of 50 milliseconds
+    }
 
 function generateRegions(splitRegions, packedRegions, sizeOfRegions) {
     dummyArray = []; // Reset the global array
@@ -518,6 +620,9 @@ function generateGrid() {
     selectRegion(0);
     document.addEventListener('mouseup', handleBoxEnd);
     document.addEventListener('touchend', handleBoxEnd);
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+loadingOverlay.style.display = 'none';
 }
 
 function createRegionButtons() {
@@ -578,6 +683,7 @@ function clearSelectedRegion() {
 }
 
 function clearAllRegions() {
+  hideSureModal();
     for (let i = 0; i < height; i++) {
         for (let j = 0; j < width; j++) {
           regionAssignments[i][j] = null;
@@ -745,6 +851,27 @@ function setRegionButtonBackgroundColor(region) {
     checkWinCondition();
 }
 
+function showBothModal(modalId) {
+    document.getElementById("screen").style.filter = 'brightness(.5)';
+    const modal = document.getElementById(modalId);
+    modal.style.visibility = 'visible';
+    modal.classList.remove('hide'); // Remove hide class if present
+    modal.classList.add('show');   // Add show class to fade in
+}
+
+function hideBothModal(modalId) {
+    document.getElementById("screen").style.filter = 'none';
+    const modal = document.getElementById(modalId);
+    modal.classList.remove('show'); // Remove show class
+    modal.classList.add('hide');    // Add hide class to fade out
+
+    // // Optional: Ensure the modal is fully hidden after animation ends
+    setTimeout(() => {
+        modal.style.visibility = 'hidden';
+    }, 300);
+}
+
+
 function checkWinCondition() {
     let redCount = 0;
     let allCompleted = true;
@@ -769,9 +896,21 @@ function checkWinCondition() {
 
     // If red-majority districts exceed half the total regions, show the modal
     if (redCount > Math.floor(regionButtons.length / 2)) {
-        const modal = document.getElementById('modal');
-        modal.style.display = 'block';
+        showBothModal('modal');
     }
+}
+
+function showSureModal() {
+  showBothModal('sureModal');
+}
+
+function hideSureModal() {
+  hideBothModal('sureModal');
+}
+
+function hideModal() {
+  hideBothModal('modal');
+  generateGrid();
 }
 
 function getTileElement(row, col) {
