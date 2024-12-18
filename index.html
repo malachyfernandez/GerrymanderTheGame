@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gfirm.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Tiny5&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
 
 body {
   margin:0;
-  background:#202429;
+  background:#131224;
   touch-action: none;
 }
 * {
@@ -69,6 +69,8 @@ body {
 .screen {
   height:100vh;
   width:100vw;
+  max-width:800px;
+  margin:auto;
 }
 #screen {
   transition: .1s;
@@ -141,6 +143,24 @@ input:hover {
     padding: 0 10px;
     padding-top: 30px;
 }
+#region-buttons::-webkit-scrollbar {
+  width: 5px;
+}
+
+/* Track */
+#region-buttons::-webkit-scrollbar-track {
+  background: none; 
+}
+ 
+/* Handle */
+#region-buttons::-webkit-scrollbar-thumb {
+  background: #888; 
+}
+
+/* Handle on hover */
+#region-buttons::-webkit-scrollbar-thumb:hover {
+  background: #555; 
+}
 .region-button {
     outline: 2px solid;
     padding: 5px 10px;
@@ -163,7 +183,7 @@ input:hover {
 .region-button.selected {
     font-weight: bold;
     outline: 3px solid;
-    background-color: #333;
+    background:#24282d;
 }
 
 #grid-container {
@@ -171,21 +191,28 @@ input:hover {
     justify-content: center;
     user-select: none;
     margin:0;
+    transition:.3s;
 }
 .grid-scrollbox {
-  width:100vw;
-  height:100%;
+  width:100%;
+  max-width:800px;
+  height:calc(100vh - 170px);
+  position:absolute;
+  bottom:45px;
   /* max-height:200px; */
   overflow:hidden;
   gap:10px;
   padding:0;
+}
+.grid-scrollbox.shrunk {
+  height:calc(100vh - 350px);
 }
 .grid-box {
     width: 30px;
     height: 30px;
     box-sizing: border-box;
     outline-offset:-3px;
-    border: solid 5px #202429;
+    border: solid 5px #171C27;
 }
 .red {
     background-color: #a00;
@@ -331,11 +358,21 @@ input:hover {
 .imperfect::first-letter {
   font-weight:800;
 }
+.settings {
+  overflow:hidden;
+  height:185px;
+  transition:.3s;
+  background:#202429;
+}
+.settings.hidden {
+  height:0; 
+}
 </style>
 </head>
 <body>
 <div class="vstack screen" id="screen">
   <div class="vstack firm" style="height:320px; overflow: visible;">
+  <div id="settings" class="settings">
     <div class="vstack firm" style="height:130px; margin:10px;">
         <h1 style="line-height:0px;">Gerrymander</h1>
         <p style="line-height:0px; font-weight:800;">the puzzle game</p>
@@ -346,21 +383,49 @@ input:hover {
     </div>
     <div id="controls" class="hstack gap frim alt-center" style="margin:10px; min-height:30px;">
         <label for="width">Width:</label>
-        <input class="firm" type="number" id="width" min="1" value="10">
+        <input class="firm" type="number" id="width" min="1" value="7">
         <label for="height">Height:</label>
-        <input type="number" id="height" min="1" value="7">
+        <input type="number" id="height" min="1" value="10">
         <label for="regions">Districts:</label>
         <input type="number" id="regions" min="1" value="7">
         
     </div>
-    <button onclick="loadGenerateGrid()" style="margin:10px;">Generate Grid</button>
+  </div>
+  <div class="hstack spaced">
+    <button onclick="loadGenerateGrid()" style="margin:10px; height: 35px; width:100%; max-width:200px;">Generate Grid</button>
+    <button onclick="showSettings()" id="showBtn" class="vstack center alt-center" style="margin:10px; width:35px; height:35px; background:none; display:none;">
+      <svg width="30" height="30" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <!-- Top-left corner -->
+        <path d="M7 3 V7 H3" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Top-right corner -->
+        <path d="M13 3 V7 H17" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Bottom-left corner -->
+        <path d="M3 13 H7 V17" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Bottom-right corner -->
+        <path d="M17 13 H13 V17" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button onclick="hideSettings()" id="hideBtn" class="vstack center alt-center" style="margin:10px; width:35px; height:35px; background:none; display:none;">
+      <svg width="30" height="30" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <!-- Top-left corner -->
+        <path d="M7 3 H3 V7" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Top-right corner -->
+        <path d="M13 3 H17 V7" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Bottom-left corner -->
+        <path d="M3 13 V17 H7" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Bottom-right corner -->
+        <path d="M17 13 V17 H13" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
 
+  </div>
+    
     <div id="region-buttons" class="hstack scroll firm "></div>
   </div>
-  <div class="grid-scrollbox hstack center alt-center">
-    <div id="grid-container" class=""></div>
+  <div class="grid-scrollbox firm hstack center alt-center shrunk">
+    <div id="grid-container"></div>
   </div>
-  <div class="hstack center gap " style="padding:0 10px; height:100px;">
+  <div class="hstack center gap frim" style="padding:0 10px; height:50px; width:calc(100vw - 20px); max-width:780px; position:absolute; bottom:0; left:calc(50vw-800px);">
     <button id="clear-button" class="hstack flex center" style="height:35px;" onclick="clearSelectedRegion()">Clear Region</button>
     <button id="clear-all-button" class="hstack flex center" style="height:35px;" onclick="showSureModal()">Clear All</button>  
   </div>  
@@ -403,6 +468,49 @@ let dummyArray = [];
 
 let completedRegions = 0; // To track the number of completed regions
 let redDistricts = 0; // To count red-majority districts
+
+function hideSettings() {
+  const settingsElement = document.getElementById('settings');
+  if (settingsElement) {
+    settingsElement.classList.add('hidden');
+  }
+
+  const gridScrollbox = document.querySelector('.grid-scrollbox');
+  if (gridScrollbox) {
+    gridScrollbox.classList.remove('shrunk');
+  }
+
+  const showBtn = document.getElementById('showBtn');
+  const hideBtn = document.getElementById('hideBtn');
+ 
+  showBtn.style.display = 'flex';
+  hideBtn.style.display = 'none';
+
+  document.getElementById('screen').style.background = '#171C27';
+
+  scaleToFit();
+}
+
+function showSettings() {
+  
+  const settingsElement = document.getElementById('settings');
+  if (settingsElement) {
+    settingsElement.classList.remove('hidden');
+  }
+
+  const gridScrollbox = document.querySelector('.grid-scrollbox');
+  if (gridScrollbox) {
+    gridScrollbox.classList.add('shrunk');
+  }
+
+  const showBtn = document.getElementById('showBtn');
+  const hideBtn = document.getElementById('hideBtn');
+ 
+  showBtn.style.display = 'none';
+  hideBtn.style.display = 'flex';
+
+  scaleToFit();
+}
 
 function generateRandomRegions(width, height, numberOfRegions) {
     const totalCells = width * height;
@@ -518,6 +626,8 @@ function generateRandomRegions(width, height, numberOfRegions) {
 
       loadingOverlay.style.display = 'none';
 
+      hideSettings();
+
     }
 
     function findRandomUnassignedCell(grid) {
@@ -538,6 +648,7 @@ function generateRandomRegions(width, height, numberOfRegions) {
   }
 
   function loadGenerateGrid() {
+
       const loadingOverlay = document.getElementById('loadingOverlay');
 
       loadingOverlay.style.display = 'flex';
@@ -660,6 +771,8 @@ function generateGrid() {
     const loadingOverlay = document.getElementById('loadingOverlay');
 
     loadingOverlay.style.display = 'none';
+
+    hideSettings();
 }
 
 function createRegionButtons() {
