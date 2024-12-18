@@ -204,6 +204,11 @@ input:hover {
   gap:10px;
   padding:0;
 }
+@supports (height: 100svh) {
+  .grid-scrollbox {
+    height:calc(100svh - 170px);
+  }
+}
 .grid-scrollbox.shrunk {
   height:calc(100vh - 350px);
 }
