@@ -467,6 +467,7 @@ input:hover {
 let regionAssignments = [];   // Parallel 2D array for region assignments: null if no region
 let regionHues = [];          // Stores the hues for each region
 let currentRegion = 0;        // The currently selected region (0-based index)
+let startingRegion = 0;        // The region started by the mouse down event; used when automatically switching districts
 let isMouseDown = false;      // Track mouse down state for dragging
 let maxTilesPerRegion = 0;
 let width, height, numRegions;
@@ -820,9 +821,9 @@ function selectRegion(r) {
     regionButtons[r].classList.add('selected');
 
     // Clear "washed-out" class from all tiles
-    document.querySelectorAll('.grid-box').forEach(tile => {
-        tile.classList.remove('washed-out');
-    });
+    // document.querySelectorAll('.grid-box').forEach(tile => {
+    //     tile.classList.remove('washed-out');
+    // });
 
     for (let i = 0; i < height; i++) {
         for (let j = 0; j < width; j++) {
@@ -881,6 +882,7 @@ function handleBoxStart(e) {
     const target = e.targetTouches ? document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY) : e.target;
     clearSelectedRegion();
     if (target && target.classList.contains('grid-box')) {
+        startingRegion = currentRegion;
         isMouseDown = true;
         isTouchDragging = true;
         addTileToRegion(target);
@@ -894,7 +896,9 @@ function handleBoxMove(e) {
         const touch = e.touches ? e.touches[0] : null;
         const target = touch ? document.elementFromPoint(touch.clientX, touch.clientY) : e.target;
         if (target && target.classList.contains('grid-box')) {
-            addTileToRegion(target);
+            if (startingRegion == currentRegion) {
+              addTileToRegion(target);
+            }
         }
     }
 }
@@ -1019,25 +1023,42 @@ function setRegionButtonBackgroundColor(region) {
     regionButton.style.backgroundColor = bgColor;
 
     if (redCount > blueCount) {
-      if ((redCount-1) > (blueCount+1)) {
-        const imperfectButton = document.querySelector(`.imperfect[data-region='${currentRegion}']`);
-        imperfectButton.style.display = 'block';  
-      } 
+        if ((redCount - 1) > (blueCount + 1)) {
+            const imperfectButton = document.querySelector(`.imperfect[data-region='${region}']`);
+            imperfectButton.style.display = 'block';
+        }
     }
     if (blueCount > redCount) {
-      if (redCount !== 0) {
-        const imperfectButton = document.querySelector(`.imperfect[data-region='${currentRegion}']`);
-        imperfectButton.style.display = 'block';  
-      } 
+        if (redCount !== 0) {
+            const imperfectButton = document.querySelector(`.imperfect[data-region='${region}']`);
+            imperfectButton.style.display = 'block';
+        }
     }
 
-    // Check if all regions are completed
+    // Mark region as completed
     completedRegions++;
-    if (completedRegions === numRegions) {
-        checkWinCondition();
-    }
-
     checkWinCondition();
+
+    // Automatically switch to the next uncompleted region
+    switchToNextRegion(region);
+}
+
+function switchToNextRegion(currentRegion) {
+    const regionButtons = document.querySelectorAll('.region-button');
+    for (let i = currentRegion + 1; i < regionButtons.length; i++) {
+        const button = regionButtons[i];
+        const bgColor = window.getComputedStyle(button).backgroundColor;
+
+        if (bgColor === "rgba(0, 0, 0, 0)" || bgColor === "transparent") {
+            // Found the next uncompleted region
+            selectRegion(currentRegion)
+            selectRegion(i);
+
+            // Scroll to make it visible if necessary
+            button.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+            return;
+        }
+    }
 }
 
 function showBothModal(modalId) {
