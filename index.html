@@ -72,6 +72,7 @@ body {
 }
 #screen {
   transition: .1s;
+  background:#202429;
 }
 
 @supports (height: 100svh) {
@@ -129,13 +130,16 @@ input {
     margin:0;
     text-align:center;
     font-size:12px;
+    flex-grow:0;
+  flex-shrink:0;
 }
 input:hover {
     background-color: #404040;
 }
 
 #region-buttons {
-    margin: 10px 0;
+    padding: 0 10px;
+    padding-top: 30px;
 }
 .region-button {
     outline: 2px solid;
@@ -148,10 +152,13 @@ input:hover {
     align-items:center;
     justify-content:center;
     width:80px;
+    height:25px;
     margin:4px;
     
     flex-grow:0;
     flex-shrink:0;
+
+    position:relative;
 }
 .region-button.selected {
     font-weight: bold;
@@ -161,7 +168,6 @@ input:hover {
 
 #grid-container {
     display: grid;
-    /* gap: 8px; */
     justify-content: center;
     user-select: none;
     margin:0;
@@ -169,6 +175,7 @@ input:hover {
 .grid-scrollbox {
   width:100vw;
   height:100%;
+  /* max-height:200px; */
   overflow:hidden;
   gap:10px;
   padding:0;
@@ -197,11 +204,11 @@ input:hover {
 }
 /* Modal Styles */
 
-#modal h2 {
+.modal h2 {
     margin: 0 0 10px 0;
     color: #fff;
 }
-#modal button {
+.modal button {
     margin-top: 10px;
     background-color: #444;
     color: #fff;
@@ -210,11 +217,11 @@ input:hover {
     cursor: pointer;
     border-radius: 5px;
 }
-#modal button:hover {
+.modal button:hover {
     background-color: #555;
 }
 
-#modal, #sureModal, #errorModal {
+.modal {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -232,48 +239,16 @@ input:hover {
     transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
-#modal.show, #sureModal.show, #errorModal.show {
+.modal.show {
     opacity: 1; /* Fully visible */
     visibility: visible; /* Element is interactable */
     transform: translate(-50%, -50%) scale(1); /* Normal scale */
 }
 
-#modal.hide, #sureModal.hide, #errorModal.hide {
+.modal.hide {
     opacity: 0; /* Fade out */
     /* visibility: hidden;  */
     transform: translate(-50%, -50%) scale(0.95); /* Slightly shrink */
-}
-#sureModal h2 {
-    margin: 0 0 10px 0;
-    color: #fff;
-}
-#sureModal button {
-    margin-top: 10px;
-    background-color: #444;
-    color: #fff;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 5px;
-}
-#errorModal button:hover {
-    background-color: #555;
-}
-#errorModal h2 {
-    margin: 0 0 10px 0;
-    color: #fff;
-}
-#errorModal button {
-    margin-top: 10px;
-    background-color: #444;
-    color: #fff;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 5px;
-}
-#errorModal button:hover {
-    background-color: #555;
 }
 
 .washed-out {
@@ -308,20 +283,70 @@ input:hover {
     justify-content: center;
     align-items: center;
 }
-/* Region outline will be applied inline via JS */
+.more-button {
+  font-weight:400; 
+  text-decoration: underline; 
+  cursor: pointer;
+  white-space: nowrap;
+  
+  background:#202429;
+}
+
+@media (max-width: 370px) {
+  .more-button {
+    position: absolute; 
+    right: 0; 
+    bottom: 0;
+    width:130px;
+    text-align:right;
+    background: linear-gradient(to right, #0000 0%, #202429 20%, #202429 100%);
+    /* background:#202; */
+  }
+}
+
+.goal-p {
+  line-height:20px; 
+  font-weight:300; 
+  height:40px;
+  -webkit-line-clamp: 2; 
+  -webkit-box-orient: vertical; 
+  text-overflow: ellipsis; 
+  position:relative;
+  max-width: 600px;
+}
+
+.imperfect {
+  position: absolute;
+  height:25px;
+  top:-34px;
+  left:0;
+  line-height:0px;
+  justify-content:center;
+  align-items:center;
+  font-size:12px;
+  display: none;
+
+  z-index:10;
+}
+.imperfect::first-letter {
+  font-weight:800;
+}
 </style>
 </head>
 <body>
 <div class="vstack screen" id="screen">
-  <div class="vstack firm" style="height:320px;">
+  <div class="vstack firm" style="height:320px; overflow: visible;">
     <div class="vstack firm" style="height:130px; margin:10px;">
         <h1 style="line-height:0px;">Gerrymander</h1>
         <p style="line-height:0px; font-weight:800;">the puzzle game</p>
-        <p style="line-height:20px; font-weight:300;">Goal: create a majority of red districs from the minority of red precincts.</p>
+        <p class="goal-p">
+          Goal: create a majority of red districts from the minority of red precincts. 
+          <a class="more-button" onclick='showBothModal("detailsModal")'>More Details</a>
+        </p>
     </div>
-    <div id="controls" class="hstack gap frim alt-center" style="margin:10px;">
+    <div id="controls" class="hstack gap frim alt-center" style="margin:10px; min-height:30px;">
         <label for="width">Width:</label>
-        <input type="number" id="width" min="1" value="10">
+        <input class="firm" type="number" id="width" min="1" value="10">
         <label for="height">Height:</label>
         <input type="number" id="height" min="1" value="7">
         <label for="regions">Districts:</label>
@@ -330,7 +355,7 @@ input:hover {
     </div>
     <button onclick="loadGenerateGrid()" style="margin:10px;">Generate Grid</button>
 
-    <div id="region-buttons" class="hstack scroll firm" style="padding: 0 10px;"></div>
+    <div id="region-buttons" class="hstack scroll firm "></div>
   </div>
   <div class="grid-scrollbox hstack center alt-center">
     <div id="grid-container" class=""></div>
@@ -341,20 +366,26 @@ input:hover {
   </div>  
 </div>
 
-<div id="modal">
+<div id="modal" class="modal">
   <h3>You Killed Democracy!</h3>
   <button onclick="hideModal()">Play Another</button>
 </div>
-<div id="sureModal">
+<div id="sureModal" class="modal">
   <p>Are you sure you want to clear everything?</p>
   <button style="width:140px" onclick="hideSureModal()">Cancel</button>
   <button style="width:140px" onclick="clearAllRegions()">Clear All</button>
 </div>
-<div id="errorModal">
+<div id="errorModal" class="modal">
   <h3>Change Number Of Districts</h3>
   <p style="font-size:13px;">The number of tiles cannot be divided evenly into the number of districts</p>
   <button style="width:80px" onclick='hideBothModal("errorModal")'>OK</button>
 </div>
+<div id="detailsModal" class="modal">
+  <h3 style="text-align: left;">More Details</h3>
+  <p style="font-size:13px; text-align: left;">Grids in this game ALWAYS have as <span style="text-decoration: underline;">few red tiles as possible</span>. This means a valid solution MUST:<br>- have one more then half of the districs be red and one less then half be blue<br>- have blue majority districts contain <span style="text-decoration: underline;">only</span> blue tiles<br>- have red majority districts contain <span style="text-decoration: underline;">only</span> one more red tile then blue tiles<br><br>"imperfect" means either a blue majority district contains a red tile, or a red majority district contains more red tiles then  necessary</p>
+  <button style="width:80px" onclick='hideBothModal("detailsModal")'>OK</button>
+</div>
+
 
 <div id="loadingOverlay" class="otherOverlay">refreshing...</div>
 
@@ -635,13 +666,25 @@ function createRegionButtons() {
     const regionButtonsContainer = document.getElementById('region-buttons');
     regionButtonsContainer.innerHTML = '';
     for (let r = 0; r < numRegions; r++) {
-        const button = document.createElement('div');
-        button.classList.add('region-button');
-        button.style.outlineColor = `hsl(${regionHues[r]}, 100%, 50%)`;
-        button.textContent = `District ${r + 1}`;
-        button.dataset.region = r;
-        button.addEventListener('click', () => selectRegion(r));
-        regionButtonsContainer.appendChild(button);
+      const button = document.createElement('div');
+      button.classList.add('region-button');
+      button.style.outlineColor = `hsl(${regionHues[r]}, 100%, 50%)`;
+      button.textContent = `District ${r + 1}`;
+      button.dataset.region = r;
+
+      // Create the inner button
+      const innerButton = document.createElement('button');
+      innerButton.classList.add('imperfect');
+      innerButton.dataset.region = r;
+      innerButton.textContent = 'ⓘ imperfect';
+      innerButton.style.backgroundColor = `hsl(${regionHues[r]}, 100%, 35%)`;
+      innerButton.addEventListener('click', () => showBothModal("detailsModal"));
+
+      // Append the inner button to the outer button
+      button.appendChild(innerButton);
+
+      button.addEventListener('click', () => selectRegion(r));
+      regionButtonsContainer.appendChild(button);
     }
 }
 
@@ -686,6 +729,8 @@ function clearSelectedRegion() {
     // Reset the background of the region button if it was completed
     const regionButton = document.querySelector(`.region-button[data-region='${currentRegion}']`);
     regionButton.style.backgroundColor = '';
+    const imperfectButton = document.querySelector(`.imperfect[data-region='${currentRegion}']`);
+        imperfectButton.style.display = 'none';  
 }
 
 function clearAllRegions() {
@@ -700,6 +745,10 @@ function clearAllRegions() {
     const regionButtons = document.querySelectorAll('.region-button');
     regionButtons.forEach(button => {
         button.style.backgroundColor = '';
+    });
+    const imperfects = document.querySelectorAll('.imperfect');
+    imperfects.forEach(button => {
+        button.style.display = 'none';
     });
 }
 
@@ -847,6 +896,19 @@ function setRegionButtonBackgroundColor(region) {
 
     const regionButton = document.querySelector(`.region-button[data-region='${region}']`);
     regionButton.style.backgroundColor = bgColor;
+
+    if (redCount > blueCount) {
+      if ((redCount-1) > (blueCount+1)) {
+        const imperfectButton = document.querySelector(`.imperfect[data-region='${currentRegion}']`);
+        imperfectButton.style.display = 'block';  
+      } 
+    }
+    if (blueCount > redCount) {
+      if (redCount !== 0) {
+        const imperfectButton = document.querySelector(`.imperfect[data-region='${currentRegion}']`);
+        imperfectButton.style.display = 'block';  
+      } 
+    }
 
     // Check if all regions are completed
     completedRegions++;
