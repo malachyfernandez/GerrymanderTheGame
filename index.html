@@ -222,6 +222,7 @@ input:hover {
     outline-offset:-3px;
     border: solid 5px #171C27;
 }
+
 .red {
     background-color: #a00;
 }
@@ -1107,6 +1108,47 @@ function checkWinCondition() {
     // If red-majority districts exceed half the total regions, show the modal
     if (redCount > Math.floor(regionButtons.length / 2)) {
         showBothModal('modal');
+        applyMajorityColors(); // Change tile colors based on majority
+    }
+}
+
+// Apply majority colors to tiles based on their region's majority
+function applyMajorityColors() {
+    for (let region = 0; region < numRegions; region++) {
+        let redCount = 0;
+        let blueCount = 0;
+
+        // Count the colors in this region
+        for (let i = 0; i < height; i++) {
+            for (let j = 0; j < width; j++) {
+                if (regionAssignments[i][j] === region) {
+                    if (gridArray[i][j] === 0) {
+                        redCount++;
+                    } else if (gridArray[i][j] === 1) {
+                        blueCount++;
+                    }
+                }
+            }
+        }
+
+        // Determine majority color
+        const majorityColor = redCount > blueCount ? 'red' : 'blue';
+
+        // Apply the majority color to all tiles in the region
+        for (let i = 0; i < height; i++) {
+            for (let j = 0; j < width; j++) {
+                if (regionAssignments[i][j] === region) {
+                    const delay = (i * width + j) * 50; // Calculate delay in milliseconds
+                    setTimeout(() => {
+                        const tile = getTileElement(i, j);
+                        tile.style.transition = "2s";
+                        tile.style.backgroundColor = majorityColor === 'red' ? '#a00' : '#00a';
+                        tile.style.border = "0";
+                        tile.style.outline = "0";
+                    }, delay);
+                }
+            }
+        }
     }
 }
 
