@@ -32,9 +32,9 @@ Your goal is to:
 
 - 🟥🟦 **Color-Coded Tiles** — Red and blue tiles represent voter precincts.
 - ✏️ **Draw Districts** — Click and drag to assign tiles to districts.
-- 🧠 **Strategic Logic** — Must follow legal-like constraints: red-majority districts can have just one more red than blue, blue-majority must be entirely blue.
-- ⚠️ **Imperfect Alerts** — Visual warning if a district violates the rules.
-- 🔁 **Auto-checks & Win Condition** — When enough red districts are created, you win (and "kill democracy")!
+- 🧠 **Strategic Logic** — Red districts use the fewest red tiles that can form a majority; blue districts must be entirely blue.
+- 🔢 **Required Order** — Complete every efficient red-majority district before packing the blue districts.
+- 🔁 **Auto-checks & Win Condition** — Only exact districts advance; complete them all to win (and "kill democracy")!
 
 ## ⚙️ Tech Stack
 
