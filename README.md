@@ -1,3 +1,5 @@
+![Gerrymander The Game](cover.jpg)
+
 # Gerrymander: The Puzzle Game 🗺️🧩
 
 A browser-based strategy puzzle game where you redraw district lines to win elections with a minority. Learn the mechanics of gerrymandering by trying to create a red majority from fewer red precincts — all in a clean, responsive interface.
